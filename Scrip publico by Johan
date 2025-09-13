@@ -1,0 +1,474 @@
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local Player = Players.LocalPlayer
+
+-- Anti-AFK
+local function preventAFK()
+    VirtualUser:Button2Down(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+    task.wait(1)
+    VirtualUser:Button2Up(Vector2.new(0, 0), Workspace.CurrentCamera.CFrame)
+end
+Player.Idled:Connect(preventAFK)
+
+-- UI Libraries
+local Library = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/TryharderKid/Ui-SOon/refs/heads/main/DownloadIG"))()
+local SaveManager = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/TryharderKid/Ui-SOon/master/Addons/SaveManager.luau"))()
+local InterfaceManager = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/TryharderKid/Ui-SOon/master/Addons/InterfaceManager.luau"))()
+
+local Window = Library:CreateWindow{
+    Title = "Script público Johan",
+    SubTitle = "By Johan/Fresade80",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(830, 525),
+    Resize = true,
+    MinSize = Vector2.new(470, 380),
+    Acrylic = true,
+    Theme = "VSC Dark High Contrast",
+    MinimizeKey = Enum.KeyCode.RightControl
+}
+
+local Tabs = {
+    Home = Window:CreateTab{ Title = "Home", Icon = "scan-face" },
+    Main = Window:CreateTab{ Title = "Main", Icon = "map" },
+    Rebirths = Window:CreateTab{ Title = "Rebirths", Icon = "refresh-ccw" },
+    Crystal = Window:CreateTab{ Title = "Crystal", Icon = "gem" },
+    Settings = Window:CreateTab{ Title = "Settings", Icon = "settings" },
+    Creditos = Window:CreateTab{ Title = "Creditos", Icon = "star" }
+}
+
+-- Créditos
+Tabs.Creditos:CreateParagraph("Creditos", {
+    Title = "Créditos",
+    Content = "Script creado por Johan/Fresade80.\n¡Gracias por usarlo!",
+    TitleAlignment = "Center",
+    ContentAlignment = Enum.TextXAlignment.Center
+})
+
+-- Home
+Tabs.Home:CreateParagraph("Bienvenida", {
+    Title = "¡Bienvenido!",
+    Content = "Script público hecho por Johan/Fresade80.",
+    TitleAlignment = "Center",
+    ContentAlignment = Enum.TextXAlignment.Center
+})
+
+Tabs.Home:CreateToggle("AntiAFK", {
+    Title = "Anti-AFK",
+    Default = true,
+    Callback = function(Value)
+        if Value then
+            Player.Idled:Connect(preventAFK)
+        end
+    end
+})
+
+-- WalkSpeed y AutoSpeed
+local selectedSpeed = 16
+Tabs.Home:CreateInput("WalkSpeed", {
+    Title = "Set WalkSpeed",
+    Default = "16",
+    Placeholder = "Enter Speed Value",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value)
+        selectedSpeed = Value
+        if _G.AutoSpeed then
+            if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+                Player.Character.Humanoid.WalkSpeed = tonumber(selectedSpeed)
+            end
+        end
+    end
+})
+
+Tabs.Home:CreateToggle("AutoSpeed", {
+    Title = "Enable WalkSpeed",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoSpeed = Value
+        while _G.AutoSpeed do
+            if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+                Player.Character.Humanoid.WalkSpeed = tonumber(selectedSpeed)
+            end
+            task.wait()
+        end
+    end
+})
+
+Player.CharacterAdded:Connect(function(char)
+    if _G.AutoSpeed then
+        char:WaitForChild("Humanoid").WalkSpeed = tonumber(selectedSpeed)
+    end
+end)
+
+-- Infinite Jump
+Tabs.Home:CreateToggle("InfiniteJump", {
+    Title = "Infinite Jump",
+    Description = "Saltar infinitamente",
+    Default = false,
+    Callback = function(Value)
+        _G.InfiniteJump = Value
+        local UserInputService = game:GetService('UserInputService')
+        UserInputService.JumpRequest:Connect(function()
+            if _G.InfiniteJump then
+                Player.Character:FindFirstChildOfClass('Humanoid'):ChangeState('Jumping')
+            end
+        end)
+    end
+})
+
+-- Cambiar tamaño
+local selectedSize = 2
+Tabs.Home:CreateInput("SizeAmount", {
+    Title = "Size Amount",
+    Default = "2",
+    Placeholder = "Type here...",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value)
+        selectedSize = Value
+        if _G.AutoSize then
+            ReplicatedStorage.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", tonumber(selectedSize))
+        end
+    end
+})
+
+Tabs.Home:CreateToggle("AutoSize", {
+    Title = "Auto Set Size",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoSize = Value
+        while _G.AutoSize do
+            ReplicatedStorage.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", tonumber(selectedSize))
+            task.wait(0.1)
+        end
+    end
+})
+
+-- --- FARMING GYM ---
+local function pressE()
+    local vim = game:GetService("VirtualInputManager")
+    vim:SendKeyEvent(true, "E", false, game)
+    task.wait(0.1)
+    vim:SendKeyEvent(false, "E", false, game)
+end
+
+local function autoLift()
+    while getgenv().working and task.wait() do
+        Player.muscleEvent:FireServer("rep")
+    end
+end
+
+local function teleportAndStart(machineName, position)
+    if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        Player.Character.HumanoidRootPart.CFrame = position
+        task.wait(0.5)
+        pressE()
+        autoLift()
+    end
+end
+
+local locationsList = {
+    "Starter Island", "Legend Beach", "Frost Gym", "Mythical Gym",
+    "Eternal Gym", "Legend Gym", "Muscle King Gym", "Jungle Gym"
+}
+local workoutTypes = { "Bench Press", "Squat", "Deadlift", "Pull Up", "Boulder" }
+local workoutPositions = {
+    ["Bench Press"] = {
+        ["Starter Island"] = CFrame.new(-17.0609932, 3.31417918, -2.48164988),
+        ["Legend Beach"] = CFrame.new(470.334656, 3.31417966, -321.053925),
+        ["Frost Gym"] = CFrame.new(-3013.24194, 39.2158546, -335.036926),
+        ["Mythical Gym"] = CFrame.new(2371.7356, 39.2158546, 1246.31555),
+        ["Eternal Gym"] = CFrame.new(-7176.19141, 45.394104, -1106.31421),
+        ["Legend Gym"] = CFrame.new(4111.91748, 1020.46674, -3799.97217),
+        ["Muscle King Gym"] = CFrame.new(-8590.06152, 46.0167427, -6043.34717),
+        ["Jungle Gym"] = CFrame.new(-8173, 64, 1898)
+    }
+    -- Puedes agregar más tipos de workout aquí
+}
+
+for _, workoutType in ipairs(workoutTypes) do
+    Tabs.Main:CreateDropdown(workoutType .. " dropdown", {
+        Title = "Select " .. workoutType,
+        Description = "Choose Your Training Location",
+        Values = locationsList,
+        Multi = false,
+        Default = 1,
+        Callback = function(Value)
+            _G["select" .. string.lower(string.gsub(workoutType, " ", ""))] = Value
+        end
+    })
+    Tabs.Main:CreateToggle(workoutType .. " Toggle", {
+        Title = "Farm " .. workoutType,
+        Description = "Auto Trains " .. workoutType,
+        Default = false,
+        Callback = function(Value)
+            getgenv().working = Value
+            if Value then
+                local selected = _G["select" .. string.lower(string.gsub(workoutType, " ", ""))]
+                if workoutPositions[workoutType] and workoutPositions[workoutType][selected] then
+                    teleportAndStart(workoutType, workoutPositions[workoutType][selected])
+                end
+            end
+        end
+    })
+end
+
+-- General Farming Tools
+local function equipTool(toolName)
+    local tool = Player.Backpack:FindFirstChild(toolName)
+    if tool then
+        Player.Character.Humanoid:EquipTool(tool)
+    end
+end
+local function unequipTool(toolName)
+    local equipped = Player.Character:FindFirstChild(toolName)
+    if equipped then
+        equipped.Parent = Player.Backpack
+    end
+end
+
+Tabs.Main:CreateToggle("Weight", {
+    Title = "Auto Weight",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoWeight = Value
+        if Value then equipTool("Weight") else unequipTool("Weight") end
+        while _G.AutoWeight do
+            Player.muscleEvent:FireServer("rep")
+            task.wait()
+        end
+    end
+})
+
+Tabs.Main:CreateToggle("Pushups", {
+    Title = "Auto Pushups",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoPushups = Value
+        if Value then equipTool("Pushups") else unequipTool("Pushups") end
+        while _G.AutoPushups do
+            Player.muscleEvent:FireServer("rep")
+            task.wait()
+        end
+    end
+})
+
+Tabs.Main:CreateToggle("Situps", {
+    Title = "Auto Situps",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoSitups = Value
+        if Value then equipTool("Situps") else unequipTool("Situps") end
+        while _G.AutoSitups do
+            Player.muscleEvent:FireServer("rep")
+            task.wait()
+        end
+    end
+})
+
+-- Auto Punch
+Tabs.Main:CreateToggle("Punch", {
+    Title = "Auto Punch",
+    Default = false,
+    Callback = function(Value)
+        _G.fastHitActive = Value
+        local function equipAndModifyPunch()
+            while _G.fastHitActive do
+                equipTool("Punch")
+                local punch = Player.Character:FindFirstChild("Punch")
+                if punch and punch:FindFirstChild("attackTime") then
+                    punch.attackTime.Value = 0
+                end
+                task.wait()
+            end
+        end
+        local function rapidPunch()
+            while _G.fastHitActive do
+                Player.muscleEvent:FireServer("punch", "rightHand")
+                Player.muscleEvent:FireServer("punch", "leftHand")
+                local punch = Player.Character:FindFirstChild("Punch")
+                if punch then punch:Activate() end
+                task.wait()
+            end
+        end
+        if Value then
+            task.spawn(equipAndModifyPunch)
+            task.spawn(rapidPunch)
+        else
+            unequipTool("Punch")
+        end
+    end
+})
+
+-- Settings Tab Example
+Tabs.Settings:CreateParagraph("Info", {
+    Title = "Configuración",
+    Content = "Ajusta las opciones adicionales aquí.",
+    TitleAlignment = "Center",
+    ContentAlignment = Enum.TextXAlignment.Center
+})
+
+-- Crystal Tab (Auto Open Egg Example)
+local eggsList = {
+    "Blue Crystal", "Green Crystal", "Frost Crystal", "Mythical Crystal",
+    "Inferno Crystal", "Legend Crystal", "Muscle Elite Crystal",
+    "Galaxy Oracle Crystal", "Jungle Crystal"
+}
+local selectedEgg = eggsList[1]
+Tabs.Crystal:CreateDropdown("EggDropdown", {
+    Title = "Select Crystal",
+    Description = "Choose Your Crystal to Open",
+    Values = eggsList,
+    Multi = false,
+    Default = 1,
+    Callback = function(Value)
+        selectedEgg = Value
+    end
+})
+Tabs.Crystal:CreateToggle("AutoOpenEgg", {
+    Title = "Auto Open Crystal",
+    Default = false,
+    Callback = function(Value)
+        getgenv().autoEgg = Value
+        task.spawn(function()
+            while getgenv().autoEgg and selectedEgg do
+                ReplicatedStorage.rEvents.openCrystalRemote:InvokeServer("openCrystal", selectedEgg)
+                task.wait(1)
+            end
+        end)
+    end
+})
+
+-- Rebirths Tab (Auto Rebirth Example)
+local rebirthEvent = ReplicatedStorage.rEvents.rebirthRemote
+local rebirthStat = Player.leaderstats.Rebirths
+local targetRebirthValue = 1
+local initialRebirths = rebirthStat.Value
+local startTime = tick()
+local function formatNumber(num)
+    if num >= 1e15 then return string.format("%.1fQI", num/1e15) end
+    if num >= 1e12 then return string.format("%.1fQ", num/1e12) end
+    if num >= 1e6 then return string.format("%.1fM", num/1e6) end
+    if num >= 1e3 then return string.format("%.1fK", num/1e3) end
+    return tostring(num)
+end
+local function formatTime(seconds)
+    local days = math.floor(seconds / 86400)
+    local hours = math.floor((seconds % 86400) / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local secs = math.floor(seconds % 60)
+    local ms = math.floor((tick() % 1) * 1000)
+    return string.format("%d Days %d Hours %d Minutes %d Seconds %d MS", days, hours, minutes, secs, ms)
+end
+
+local StatDisplay = Tabs.Rebirths:CreateParagraph("RebirthStats", {
+    Title = "Rebirth Statistics",
+    Content = "Loading stats...",
+    TitleAlignment = "Left",
+    ContentAlignment = Enum.TextXAlignment.Left
+})
+
+local function updateRebirthStats()
+    local currentRebirths = rebirthStat.Value
+    local gained = currentRebirths - initialRebirths
+    local elapsedTime = tick() - startTime
+    local statsFormat = [[
+Target Rebirths: %s | %s
+Current Rebirths: %s | %s
+Rebirths Gained: %s | %s
+Timer: %s]]
+    StatDisplay:SetContent(string.format(
+        statsFormat,
+        tostring(targetRebirthValue), formatNumber(targetRebirthValue),
+        tostring(currentRebirths), formatNumber(currentRebirths),
+        tostring(gained), formatNumber(gained),
+        formatTime(elapsedTime)
+    ))
+end
+RunService.RenderStepped:Connect(updateRebirthStats)
+rebirthStat.Changed:Connect(updateRebirthStats)
+local function parseNumber(input)
+    local cleanInput = input:gsub("[^%d.]", "")
+    return tonumber(cleanInput) or 1
+end
+Tabs.Rebirths:CreateInput("TargetRebirth", {
+    Title = "Target Rebirth Amount",
+    Description = "Set your rebirth goal",
+    Default = "1",
+    Placeholder = "Enter amount...",
+    Numeric = false,
+    Finished = true,
+    Callback = function(Value)
+        local parsedValue = parseNumber(Value)
+        local currentRebirths = Player.leaderstats.Rebirths.Value
+        if parsedValue <= currentRebirths then
+            Library:Notify("Target Value Invalid", "Enter a Higher Rebirth Value")
+            return
+        end
+        targetRebirthValue = parsedValue
+        updateRebirthStats()
+    end
+})
+
+local function getRebirthCost()
+    local currentRebirths = Player.leaderstats.Rebirths.Value
+    local rebirthCost = 10000 + (5000 * currentRebirths)
+    if Player:FindFirstChild("ultimatesFolder") and Player.ultimatesFolder:FindFirstChild("Golden Rebirth") then
+        local goldenRebirths = Player.ultimatesFolder["Golden Rebirth"].Value
+        rebirthCost = math.floor(rebirthCost * (1 - (goldenRebirths * 0.1)))
+    end
+    return rebirthCost
+end
+
+local targetRebirthLoop
+local targetToggle = Tabs.Rebirths:CreateToggle("AutoRebirthTarget", {
+    Title = "Auto Rebirth To Target",
+    Description = "Auto Rebirth To Target",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            targetRebirthLoop = task.spawn(function()
+                while task.wait(0.1) do
+                    if Player.leaderstats.Rebirths.Value >= targetRebirthValue then
+                        targetToggle:SetValue(false)
+                        break
+                    end
+                    if Player.leaderstats.Strength.Value >= getRebirthCost() then
+                        rebirthEvent:InvokeServer("rebirthRequest")
+                    end
+                end
+            end)
+        else
+            if targetRebirthLoop then
+                task.cancel(targetRebirthLoop)
+                targetRebirthLoop = nil
+            end
+        end
+    end
+})
+local infiniteRebirthLoop
+local infiniteToggle = Tabs.Rebirths:CreateToggle("AutoRebirthInfinite", {
+    Title = "Auto Rebirth (Infinite)",
+    Description = "Continuously rebirth without stopping",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            infiniteRebirthLoop = task.spawn(function()
+                while task.wait(0.1) do
+                    if Player.leaderstats.Strength.Value >= getRebirthCost() then
+                        rebirthEvent:InvokeServer("rebirthRequest")
+                    end
+                end
+            end)
+        else
+            if infiniteRebirthLoop then
+                task.cancel(infiniteRebirthLoop)
+                infiniteRebirthLoop = nil
+            end
+        end
+    end
+})
